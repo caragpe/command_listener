@@ -1,9 +1,10 @@
-
 #ifndef PROCESS_COMMAND_H
 #define PROCESS_COMMAND_H
 
-#include <string>
+extern "C"
+{
+  char *process_command(const char *command);
+  // The returned pointer must be freed by the caller using free() to avoid memory leaks.
+}
 
-std::string process_command(const std::string& command);
-
-#endif
+#endif // PROCESS_COMMAND_H

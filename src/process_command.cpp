@@ -1,11 +1,23 @@
 #include "process_command.h"
-#include <string>
+#include <cstring> // For strlen, strcpy, strcat, strdup
+#include <cstdlib> // For malloc, strdup
 
-std::string process_command(const std::string &command)
+extern "C" char *process_command(const char *command)
 {
-  if (command.empty())
+  // Handle null or empty input
+  if (!command || command[0] == '\0')
   {
-    return "ACK: (empty command)";
+    return strdup("ACK: (null or empty command)"); // Allocates and returns a copy; caller must free
   }
-  return "ACK: " + command;
+  size_t len = strlen(command);
+  constexpr size_t fixed_len = 5; // "ACK: " is always 5 chars (A-C-K-: space)
+  char *response = (char *)malloc(len + fixed_len + 1);
+  if (response == nullptr)
+  {
+    return strdup("ACK: (allocation failed)"); // Out-of-memory
+  }
+  strcpy(response, "ACK: ");
+  strcat(response, command);
+  // Null terminator is automatically added by strcpy/strcat due to allocation +1
+  return response;
 }
