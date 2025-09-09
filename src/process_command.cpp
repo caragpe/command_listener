@@ -7,10 +7,10 @@ extern "C" char *process_command(const char *command)
   // Handle null or empty input
   if (!command || command[0] == '\0')
   {
-    return strdup("ACK: (null or empty command)"); // Allocates and returns a copy; caller must free
+    return strdup("ACK: (null or empty command)"); // Allocates and returns; caller must free
   }
   size_t len = strlen(command);
-  constexpr size_t fixed_len = 5; // "ACK: " is always 5 chars (A-C-K-: space)
+  constexpr size_t fixed_len = 5; // "ACK: " is 5 chars
   char *response = (char *)malloc(len + fixed_len + 1);
   if (response == nullptr)
   {
