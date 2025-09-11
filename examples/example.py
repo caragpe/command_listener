@@ -2,16 +2,28 @@ import ctypes
 import os
 
 # Load the shared library
-lib_path = os.path.join(os.path.dirname(__file__), '..', 'build', 'libprocess_command.so')  # Adjust based on OS
+lib_path = os.path.join(os.path.dirname(__file__), '..', 'build', 'libprocess_command.so')
 lib = ctypes.CDLL(lib_path)
 
-# Define function signature
-lib.process_command.argtypes = [ctypes.c_char_p]  # Input: const char*
-lib.process_command.restype = ctypes.c_char_p     # Output: char*
+# Define function signature: Returns int (0 success, -1 error), writes to buffer
+lib.process_command.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t]
+lib.process_command.restype = ctypes.c_int
 
-# Call it (convert strings to bytes)
-command = b"hello from Python"  # Use bytes for C compatibility
-result = lib.process_command(command)
-print(result.decode('utf-8'))  # Convert back to string: "ACK: hello from Python"
+# Input as bytes
+command = b"hello from Python"
 
-# If using std::string, ctypes needs careful handling; this assumes char* return if you revert.
+# Pre-allocate buffer (choose size based on max expected response; e.g., 1024)
+BUF_SIZE = 1024
+buffer = (ctypes.c_char * BUF_SIZE)()  # create_string_buffer equivalent; empty array
+
+# Call the function
+result_code = lib.process_command(command, buffer, BUF_SIZE)
+
+if result_code == 0:
+    # Convert buffer to Python string (null-terminated)
+    response = ctypes.string_at(buffer).decode('utf-8')
+    print(response)  # "ACK: hello from Python"
+else:
+    print("Error: Function failed (e.g., buffer overflow or invalid input)")
+
+# No free needed—Python GC handles the buffer!
