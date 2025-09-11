@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)  # Fine; 3.12+ for better MSVC if possible
 project(ProcessCommandModule LANGUAGES CXX)
 
 # Set policy to honor visibility for all targets
 cmake_policy(SET CMP0063 NEW)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)  # Enforce strict C++14 (no GNU extensions)
 
 add_library(process_command SHARED src/process_command.cpp)
 
@@ -14,20 +15,37 @@ target_include_directories(process_command PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 
 # Visibility: Only for GCC/Clang; skip on MSVC
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-    set_target_properties(process_command PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)
+    set_target_properties(process_command PROPERTIES 
+        CXX_VISIBILITY_PRESET hidden 
+        VISIBILITY_INLINES_HIDDEN YES
+    )
 endif()
-
-# Public header property (for install)
-set_target_properties(process_command PROPERTIES PUBLIC_HEADER include/process_command.h)
 
 # Install
 install(TARGETS process_command
         LIBRARY DESTINATION lib
-        PUBLIC_HEADER DESTINATION include)
+        INCLUDES DESTINATION include)  # Hint for imported targets (optional)
+install(FILES include/process_command.h DESTINATION include)  # Install public header
 
 # Testing
-enable_testing()
+enable_testing()  # Removed include(CTest)—not needed
+
+include(FetchContent)
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG v3.5.2 # Use the latest stable tag or desired version
+)
+FetchContent_MakeAvailable(Catch2)
+message(STATUS "Catch2 source dir: ${catch2_SOURCE_DIR}")
+message(STATUS "Catch2 binary dir: ${catch2_BINARY_DIR}")
 add_executable(test_process_command tests/test_process_command.cpp)
-target_link_libraries(test_process_command process_command)
-target_include_directories(test_process_command PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(test_process_command PRIVATE process_command Catch2::Catch2WithMain)
+target_include_directories(test_process_command PRIVATE ${CMAKE_BINARY_DIR}/_deps/catch2-src/src)
+
+include(CTest)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+include(Catch)
+catch_discover_tests(test_process_command)
 add_test(NAME ProcessCommandTest COMMAND test_process_command)
+
