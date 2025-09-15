@@ -1,44 +1,48 @@
 #include "process_command.h"
 #include <cstring> // For strlen, strcpy, strcat, strncpy
-#include <cstdlib> // For NULL (if needed)
+#include <cstddef> // For size_t, nullptr
+
+namespace
+{
+  constexpr const char *kPrefix = "ACK: ";
+  constexpr size_t kPrefixLen = 5; // Length of "ACK: "
+  constexpr const char *kErrorMsg = "(null or empty command)";
+  constexpr size_t kErrorMsgLen = 22; // Length of "(null or empty command)"
+}
+
+// Writes to buffer with prefix and message, ensuring null-termination
+// Returns true if successful, false if buffer too small
+bool write_to_buffer(const char *message, size_t message_len, char *buffer, size_t bufsize)
+{
+  const size_t total_len = kPrefixLen + message_len + 1; // +1 for null terminator
+  if (total_len > bufsize)
+  {
+    buffer[0] = '\0'; // Clear buffer on overflow
+    return false;
+  }
+  strcpy(buffer, kPrefix);
+  strcat(buffer, message);
+  return true;
+}
 
 extern "C" int process_command(const char *command, char *buffer, size_t bufsize)
 {
-  if (bufsize == 0)
-    return -1; // Can't write to zero-size buffer
+  // Validate inputs
+  if (!buffer || bufsize == 0)
+  {
+    return -1; // Invalid buffer
+  }
 
-  const char *prefix = "ACK: ";
-  size_t prefix_len = 5;      // strlen("ACK: ")
-  size_t avail = bufsize - 1; // Reserve 1 for null terminator
+  // Clear buffer to ensure null-termination on error
+  buffer[0] = '\0';
 
+  // Handle null or empty command
   if (!command || command[0] == '\0')
   {
-    // Error case: Write to buffer if space allows
-    const char *err_msg = "(null or empty command)";
-    size_t err_len = strlen(err_msg);
-    if (prefix_len + err_len + 1 <= avail)
-    {
-      strcpy(buffer, "ACK: ");
-      strcat(buffer, err_msg);
-      buffer[bufsize - 1] = '\0'; // Ensure null-terminated
-      return 0;
-    }
-    else
-    {
-      buffer[0] = '\0'; // Empty on overflow
-      return -1;
-    }
+    return write_to_buffer(kErrorMsg, kErrorMsgLen, buffer, bufsize) ? 0 : -2;
   }
 
+  // Validate command length
   size_t cmd_len = strlen(command);
-  if (prefix_len + cmd_len + 1 > avail)
-  {
-    buffer[0] = '\0'; // Truncate on overflow
-    return -1;
-  }
-
-  strcpy(buffer, prefix);
-  strcat(buffer, command);
-  buffer[bufsize - 1] = '\0'; // Ensure null-terminated
-  return 0;                   // Success
+  return write_to_buffer(command, cmd_len, buffer, bufsize) ? 0 : -3;
 }
