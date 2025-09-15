@@ -4,9 +4,9 @@
 
 namespace {
 constexpr const char *kPrefix = "ACK: ";
-constexpr size_t kPrefixLen = 5; // Length of "ACK: "
+constexpr const char *kNackPrefix = "NACK: ";
 constexpr const char *kErrorMsg = "(null or empty command)";
-constexpr size_t kErrorMsgLen = 22; // Length of "(null or empty command)"
+constexpr const char *kInvalidCmdMsg = "Invalid command";
 } // namespace
 
 // Writes to buffer with prefix and message, ensuring null-termination
