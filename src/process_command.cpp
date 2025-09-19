@@ -1,22 +1,21 @@
 #include "process_command.h"
-#include <cstring> // For strlen, strcpy, strcat, strncpy
 #include <cstddef> // For size_t, nullptr
+#include <cstring> // For strlen, strcpy, strcat, strncpy
 
-namespace
-{
-  constexpr const char *kPrefix = "ACK: ";
-  constexpr size_t kPrefixLen = 5; // Length of "ACK: "
-  constexpr const char *kErrorMsg = "(null or empty command)";
-  constexpr size_t kErrorMsgLen = 22; // Length of "(null or empty command)"
-}
+namespace {
+constexpr const char *kPrefix = "ACK: ";
+constexpr size_t kPrefixLen = 5; // Length of "ACK: "
+constexpr const char *kErrorMsg = "(null or empty command)";
+constexpr size_t kErrorMsgLen = 22; // Length of "(null or empty command)"
+} // namespace
 
 // Writes to buffer with prefix and message, ensuring null-termination
 // Returns true if successful, false if buffer too small
-bool write_to_buffer(const char *message, size_t message_len, char *buffer, size_t bufsize)
-{
-  const size_t total_len = kPrefixLen + message_len + 1; // +1 for null terminator
-  if (total_len > bufsize)
-  {
+bool write_to_buffer(const char *message, size_t message_len, char *buffer,
+                     size_t bufsize) {
+  const size_t total_len =
+      kPrefixLen + message_len + 1; // +1 for null terminator
+  if (total_len > bufsize) {
     buffer[0] = '\0'; // Clear buffer on overflow
     return false;
   }
@@ -25,11 +24,10 @@ bool write_to_buffer(const char *message, size_t message_len, char *buffer, size
   return true;
 }
 
-extern "C" int process_command(const char *command, char *buffer, size_t bufsize)
-{
+extern "C" int process_command(const char *command, char *buffer,
+                               size_t bufsize) {
   // Validate inputs
-  if (!buffer || bufsize == 0)
-  {
+  if (!buffer || bufsize == 0) {
     return -1; // Invalid buffer
   }
 
@@ -37,8 +35,7 @@ extern "C" int process_command(const char *command, char *buffer, size_t bufsize
   buffer[0] = '\0';
 
   // Handle null or empty command
-  if (!command || command[0] == '\0')
-  {
+  if (!command || command[0] == '\0') {
     return write_to_buffer(kErrorMsg, kErrorMsgLen, buffer, bufsize) ? 0 : -2;
   }
 
