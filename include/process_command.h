@@ -1,7 +1,8 @@
 #ifndef PROCESS_COMMAND_H
 #define PROCESS_COMMAND_H
 
-#include <stddef.h> // For size_t
+#include <array>
+#include <cstddef>  // size_t
 
 #ifdef _WIN32
 #define PROCESS_COMMAND_EXPORT __declspec(dllexport)
@@ -10,11 +11,23 @@
 #endif
 
 extern "C" {
-// Returns 0 on success, -1 on error (e.g., input too long for buffer or null
-// input) Writes null-terminated response to buffer (up to bufsize-1 chars)
-PROCESS_COMMAND_EXPORT int process_command(const char *command, char *buffer,
-                                           size_t bufsize);
-// Note: No free needed—caller provides buffer.
+//  return-code summary
+//   0  success (ACK or null-cmd message written)
+//  -1  invalid buffer (nullptr or zero size)
+//  -2  null-cmd message does not fit
+//  -3  ACK message does not fit
+//  -4  NACK written successfully
+//  -5  NACK message does not fit
+PROCESS_COMMAND_EXPORT int process_command(const char *command, char *buffer, size_t bufsize);
 }
 
-#endif // PROCESS_COMMAND_H
+/*  declarations only  */
+namespace detail {
+extern const char kPrefix[];
+extern const char kNackPrefix[];
+extern const char kErrorMsg[];
+extern const char kInvalidCmdMsg[];
+extern const std::array<const char *, 3> kValidCommands;
+}  // namespace detail
+
+#endif  // PROCESS_COMMAND_H

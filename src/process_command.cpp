@@ -1,45 +1,57 @@
 #include "process_command.h"
-#include <cstddef> // For size_t, nullptr
-#include <cstring> // For strlen, strcpy, strcat, strncpy
+
+#include <algorithm>
+#include <cstring>
+#include <string>
+
+namespace detail {
+/*  external-linkage definitions  */
+const char kPrefix[] = "ACK: ";
+const char kNackPrefix[] = "NACK: ";
+const char kErrorMsg[] = "(null or empty command)";
+const char kInvalidCmdMsg[] = "Invalid command";
+const std::array<const char *, 3> kValidCommands = {"COMMAND_1", "COMMAND_2", "COMMAND_3"};
+}  // namespace detail
 
 namespace {
-constexpr const char *kPrefix = "ACK: ";
-constexpr const char *kNackPrefix = "NACK: ";
-constexpr const char *kErrorMsg = "(null or empty command)";
-constexpr const char *kInvalidCmdMsg = "Invalid command";
-} // namespace
 
-// Writes to buffer with prefix and message, ensuring null-termination
-// Returns true if successful, false if buffer too small
-bool write_to_buffer(const char *message, size_t message_len, char *buffer,
-                     size_t bufsize) {
-  const size_t total_len =
-      kPrefixLen + message_len + 1; // +1 for null terminator
-  if (total_len > bufsize) {
-    buffer[0] = '\0'; // Clear buffer on overflow
-    return false;
-  }
-  strcpy(buffer, kPrefix);
-  strcat(buffer, message);
-  return true;
+bool is_valid_command(const char *cmd) {
+    if (!cmd || cmd[0] == '\0') return false;
+    auto eq = [](const char *a, const char *b) { return std::strcmp(a, b) == 0; };
+    return std::any_of(detail::kValidCommands.begin(), detail::kValidCommands.end(),
+                       [cmd, eq](const char *v) { return eq(cmd, v); });
 }
 
-extern "C" int process_command(const char *command, char *buffer,
-                               size_t bufsize) {
-  // Validate inputs
-  if (!buffer || bufsize == 0) {
-    return -1; // Invalid buffer
-  }
+bool build_and_copy(const char *prefix, const char *msg, char *buf, size_t bufsize) {
+    std::string out(prefix);
+    out += msg;
+    if (out.size() + 1 > bufsize) {  // +1 for NUL
+        if (bufsize) buf[0] = '\0';
+        return false;
+    }
+    std::strcpy(buf, out.c_str());
+    return true;
+}
 
-  // Clear buffer to ensure null-termination on error
-  buffer[0] = '\0';
+}  // anonymous namespace
 
-  // Handle null or empty command
-  if (!command || command[0] == '\0') {
-    return write_to_buffer(kErrorMsg, kErrorMsgLen, buffer, bufsize) ? 0 : -2;
-  }
+/*  C interface  */
+extern "C" int process_command(const char *command, char *buffer, size_t bufsize) {
+    /* 1.  absolutely no write when buffer unusable */
+    if (!buffer || bufsize == 0) return -1;
+    if (bufsize > 0) buffer[0] = '\0';
 
-  // Validate command length
-  size_t cmd_len = strlen(command);
-  return write_to_buffer(command, cmd_len, buffer, bufsize) ? 0 : -3;
+    /* 2.  null / empty command */
+    if (!command || command[0] == '\0') {
+        return build_and_copy(detail::kPrefix, detail::kErrorMsg, buffer, bufsize) ? 0 : -2;
+    }
+
+    /* 3.  unknown command */
+    if (!is_valid_command(command)) {
+        bool ok = build_and_copy(detail::kNackPrefix, detail::kInvalidCmdMsg, buffer, bufsize);
+        return ok ? -4 : -5;
+    }
+
+    /* 4.  valid command */
+    return build_and_copy(detail::kPrefix, command, buffer, bufsize) ? 0 : -3;
 }
