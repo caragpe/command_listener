@@ -1,34 +1,56 @@
-cmake_minimum_required(VERSION 3.10)  # Fine; 3.12+ for better MSVC if possible
+cmake_minimum_required(VERSION 3.10)
 project(ProcessCommandModule LANGUAGES CXX)
 
-# Set policy to honor visibility for all targets
+# Set Modern CMake Policies
+cmake_policy(SET CMP0003 NEW)
 cmake_policy(SET CMP0063 NEW)
 
+# C++ Standard
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS OFF)  # Enforce strict C++14 (no GNU extensions)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Build Shared Library
 add_library(process_command SHARED src/process_command.cpp)
 
-# Includes and properties
-target_include_directories(process_command PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Mark header as public
+set_target_properties(process_command PROPERTIES
+    PUBLIC_HEADER include/process_command.h
+)
 
-# Visibility: Only for GCC/Clang; skip on MSVC
+# Public include directory for consumers
+target_include_directories(process_command
+    PUBLIC
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+
+# Hide symbols by default (GCC/Clang)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-    set_target_properties(process_command PROPERTIES 
-        CXX_VISIBILITY_PRESET hidden 
+    set_target_properties(process_command PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN YES
     )
 endif()
 
-# Install
-install(TARGETS process_command
-        LIBRARY DESTINATION lib
-        INCLUDES DESTINATION include)  # Hint for imported targets (optional)
-install(FILES include/process_command.h DESTINATION include)  # Install public header
+# Install Rules
+include(GNUInstallDirs)
 
-# Testing
-enable_testing()  # Removed include(CTest)—not needed
+install(TARGETS process_command
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Header installed via PUBLIC_HEADER above
+
+install(FILES include/process_command.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Testing Setup
+enable_testing()
 
 # =============================
 # Clang-Format Integration
@@ -65,22 +87,27 @@ else()
     message(WARNING "clang-format not found - 'check-format' and 'format' targets not available")
 endif()
 
+
+# Fetch Catch2
 include(FetchContent)
 FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG v3.5.2 # Use the latest stable tag or desired version
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.5.2
 )
 FetchContent_MakeAvailable(Catch2)
-message(STATUS "Catch2 source dir: ${catch2_SOURCE_DIR}")
-message(STATUS "Catch2 binary dir: ${catch2_BINARY_DIR}")
+
+# Build test executable
 add_executable(test_process_command tests/test_process_command.cpp)
-target_link_libraries(test_process_command PRIVATE process_command Catch2::Catch2WithMain)
-target_include_directories(test_process_command PRIVATE ${CMAKE_BINARY_DIR}/_deps/catch2-src/src)
 
+# Link against your library + Catch2
+target_link_libraries(test_process_command
+    PRIVATE
+        process_command
+        Catch2::Catch2WithMain
+)
+
+# Discover and register tests (Catch2 v3)
 include(CTest)
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-include(Catch)
+include(${catch2_SOURCE_DIR}/extras/Catch.cmake)
 catch_discover_tests(test_process_command)
-add_test(NAME ProcessCommandTest COMMAND test_process_command)
-
