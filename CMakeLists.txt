@@ -87,11 +87,8 @@ else()
     message(WARNING "clang-format not found - 'check-format' and 'format' targets not available")
 endif()
 
-<<<<<<< HEAD
-=======
 
 # Fetch Catch2
->>>>>>> 564bc7f (feat: update CMake configuration. Include clang formatter)
 include(FetchContent)
 FetchContent_Declare(
     Catch2
