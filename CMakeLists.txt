@@ -30,6 +30,41 @@ install(FILES include/process_command.h DESTINATION include)  # Install public h
 # Testing
 enable_testing()  # Removed include(CTest)—not needed
 
+# =============================
+# Clang-Format Integration
+# =============================
+
+find_program(CLANG_FORMAT_EXE NAMES clang-format clang-format-14 clang-format-13 clang-format-12)
+
+if(CLANG_FORMAT_EXE)
+    file(GLOB_RECURSE ALL_SOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
+    )
+
+    # Check formatting (fails if not compliant)
+    add_custom_target(check-format
+        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file -i ${ALL_SOURCE_FILES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Checking code formatting with clang-format..."
+    )
+
+    # Auto-format all files
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT_EXE} -i --style=file ${ALL_SOURCE_FILES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Formatting code with clang-format..."
+    )
+
+    # Optional: Add to test suite
+    add_test(NAME clang-format-check
+             COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file -i ${ALL_SOURCE_FILES}
+             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+else()
+    message(WARNING "clang-format not found - 'check-format' and 'format' targets not available")
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
   Catch2
