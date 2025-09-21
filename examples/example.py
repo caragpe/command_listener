@@ -1,5 +1,6 @@
 import ctypes
 import os
+import platform
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -14,12 +15,18 @@ RETURN_CODE_MESSAGES = {
     -5: "NACK response does not fit in buffer",
 }
 
+
+def get_lib_filename():
+    system = platform.system()
+    return {
+        "Windows": "process_command.dll",
+        "Darwin": "libprocess_command.dylib",
+    }.get(system, "libprocess_command.so")
+
+
 # Load the shared library
 lib_path = os.path.join(
-    os.path.dirname(__file__),
-    '..',
-    'build',
-    'libprocess_command.so'
+    os.path.dirname(__file__), "..", "build", "libprocess_command.so"
 )
 lib = ctypes.CDLL(lib_path)
 
@@ -45,7 +52,7 @@ result_code = lib.process_command(command, buffer, BUF_SIZE)
 
 if result_code == 0:
     # Convert buffer to Python string (null-terminated)
-    response = ctypes.string_at(buffer).decode('utf-8')
+    response = ctypes.string_at(buffer).decode("utf-8")
     print(response)  # "ACK: hello from Python"
 else:
     print("Error: Function failed (e.g., buffer overflow or invalid input)")
