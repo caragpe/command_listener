@@ -1,14 +1,35 @@
 import ctypes
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+RETURN_CODE_MESSAGES = {
+    0: "Success",
+    -1: "Invalid buffer or buffer size is zero",
+    -2: "Null/empty command message does not fit in buffer",
+    -3: "ACK response does not fit in buffer",
+    -4: "NACK written successfully (invalid command)",
+    -5: "NACK response does not fit in buffer",
+}
 
 # Load the shared library
-lib_path = os.path.join(os.path.dirname(__file__), '..',
-                        'build', 'libprocess_command.so')
+lib_path = os.path.join(
+    os.path.dirname(__file__),
+    '..',
+    'build',
+    'libprocess_command.so'
+)
 lib = ctypes.CDLL(lib_path)
 
-# Define function signature: Returns int (0 success, -1 error), writes to buffer
+# Define function signature: Returns int (0 success, -1 error).
+# The function writes to buffer.
 lib.process_command.argtypes = [
-    ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t]
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_size_t,
+]
 lib.process_command.restype = ctypes.c_int
 
 # Input as bytes
