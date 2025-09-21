@@ -68,7 +68,7 @@ This TODO outlines a comprehensive refactor and enhancement plan for the C++ com
 
 ---
 
-## 🧼 P4 – Naming, Style & Modern C++
+## 🧼 P4 – Naming
 
 - [ ] **Rename `build_and_copy` → `format_to_buffer`** (more descriptive)
 - [ ] **Mark internal free functions `noexcept`**:
@@ -76,10 +76,6 @@ This TODO outlines a comprehensive refactor and enhancement plan for the C++ com
   bool format_to_buffer(...) noexcept;
   bool is_valid_command(...) noexcept;
   ```
-- [ ] **Use `std::string_view` internally** (C++17):
-  - Replace `const char*` parameters and `std::strcmp`
-  - Avoids redundant `strlen`, safer, more efficient
-- [ ] Add `[[nodiscard]]` to helper functions that return success/fail
  
 > ✅ Validation: Zero behavior change — all tests pass.
 
