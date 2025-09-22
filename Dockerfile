@@ -19,7 +19,7 @@ WORKDIR /app
 COPY include/ ./include/
 COPY src/ ./src/
 COPY tests/ ./tests/
-COPY examples/example.py .
+COPY examples/example.py ./examples/
 COPY examples/requirements/requirements_test.txt ./examples/requirements.txt
 COPY CMakeLists.txt .
 COPY .clang-format .
