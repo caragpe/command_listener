@@ -44,7 +44,7 @@ jobs:
       - name: Check code formatting
         run: |
           docker run --rm process-command:test \
-            bash -c "cd /app && mkdir -p build && cd build && cmake .. && cmake --build . --target check-format"
+            bash -c "cd /app/build && cmake --build . --target check-format"
 
       - name: Run C++ tests
         run: |

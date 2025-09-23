@@ -24,6 +24,7 @@ COPY examples/requirements/requirements_test.txt ./examples/requirements.txt
 COPY CMakeLists.txt .
 COPY .clang-format .
 
+# Configure and build
 RUN mkdir build && cd build && cmake .. && make
 
 RUN pip3 install --no-cache-dir -r examples/requirements.txt
