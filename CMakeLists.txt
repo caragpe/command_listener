@@ -67,7 +67,7 @@ if(CLANG_FORMAT_EXE)
 
     # Check formatting (fails if not compliant)
     add_custom_target(check-format
-        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file -i ${ALL_SOURCE_FILES}
+        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file ${ALL_SOURCE_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Checking code formatting with clang-format..."
     )
