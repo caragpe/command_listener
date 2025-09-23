@@ -81,7 +81,7 @@ if(CLANG_FORMAT_EXE)
 
     # Optional: Add to test suite
     add_test(NAME clang-format-check
-             COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file -i ${ALL_SOURCE_FILES}
+             COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file ${ALL_SOURCE_FILES}
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 else()
     message(WARNING "clang-format not found - 'check-format' and 'format' targets not available")
