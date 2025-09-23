@@ -2,36 +2,55 @@ name: Build_Format_and_Tests
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     types: [opened, reopened, synchronize]
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: 1
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Prepare local cache dir (if not restored)
+        run: mkdir -p /tmp/.buildx-cache
+
+      - name: Build Docker image with Buildx
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-
-      - name: Configure CMake
-        run: cmake -B build
-
-      - name: Build project
-        run: cmake --build build
+          docker buildx build \
+            --tag process-command:test \
+            --file Dockerfile \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            --output type=docker \
+            .
 
       - name: Check code formatting
         run: |
-          cd build
-          cmake --build . --target check-format
+          docker run --rm process-command:test \
+            bash -c "cd /app/build && cmake --build . --target check-format"
 
-      - name: Run tests
-        run: ./build/test_process_command
+      - name: Run C++ tests
+        run: |
+          docker run --rm process-command:test \
+            bash -c "cd /app/build && ./test_process_command"
+
+      - name: Run Python example
+        run: |
+          docker run --rm process-command:test
