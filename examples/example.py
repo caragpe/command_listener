@@ -28,5 +28,3 @@ if result_code == 0:
     print(response)  # "ACK: hello from Python"
 else:
     print("Error: Function failed (e.g., buffer overflow or invalid input)")
-
-# No free needed—Python GC handles the buffer!

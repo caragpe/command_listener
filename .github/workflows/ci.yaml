@@ -28,13 +28,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Build Docker image
+      - name: Prepare local cache dir (if not restored)
+        run: mkdir -p /tmp/.buildx-cache
+
+      - name: Build Docker image with Buildx
         run: |
-          docker build \
+          docker buildx build \
             --tag process-command:test \
             --file Dockerfile \
             --cache-from=type=local,src=/tmp/.buildx-cache \
-            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            --output type=docker \
             .
 
       - name: Check code formatting
