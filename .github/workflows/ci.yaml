@@ -51,25 +51,66 @@ jobs:
           docker run --rm process-command:test \
             flake8 python/ --count --show-source --statistics
 
-      - name: Run C++ tests
+      - name: Generate C++ coverage
         run: |
-          docker run --rm process-command:test \
-            bash -c "cd /app/build && ./test_process_command"
+          mkdir -p coverage-cpp
+          sudo chown 1000:1000 coverage-cpp
+          docker run --rm \
+            -v $(pwd)/coverage-cpp:/coverage \
+            process-command:test \
+            bash -lc "
+              cd /app
+              mkdir -p build &&             
+              cd build &&
+              cmake -S /app -B . \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DCMAKE_CXX_FLAGS='--coverage' \
+              -DCMAKE_EXE_LINKER_FLAGS='--coverage' &&
+              make && 
+              ctest -V &&
+              # Generate coverage excluding third-party and CMake artifacts
+              gcovr -r /app \
+                --filter '/app/src' \
+                --filter '/app/include' \
+                --exclude 'build/_deps' \
+                --exclude 'build/CMakeFiles' \
+                --xml -o /coverage/coverage.xml &&
+              gcovr -r /app \
+                --filter '/app/src' \
+                --filter '/app/include' \
+                --exclude 'build/_deps' \
+                --exclude 'build/CMakeFiles' \
+                --html --html-details -o /coverage/index.html
+            "
 
-      - name: Run tests and generate JUnit XML
+      - name: Upload C++ coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-coverage
+          path: coverage-cpp
+
+      - name: Set up Python test reports directory
         run: |
           mkdir -p test-reports
           sudo chown 1000:1000 test-reports
+      - name: Run Python tests
+        run: |
           docker run --rm \
-            -v $(pwd)/test-reports:/app/test-reports \
+            -v "$(pwd)/test-reports:/app/test-reports" \
             process-command:test \
-            python3 -m pytest python/tests -v --tb=short --junitxml=/app/test-reports/test-results.xml
+            bash -c 'set -e; \
+              python3 -m coverage run -m pytest python/tests --junitxml=/app/test-reports/test-results.xml; \
+              python3 -m coverage xml -o /app/test-reports/coverage.xml; \
+              python3 -m coverage html -d /app/test-reports/htmlcov;'
 
-      - name: Upload test results
+      - name: Upload Python test results
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: test-reports/test-results.xml
+          name: python-test-results
+          path: |
+            test-reports/test-results.xml
+            test-reports/coverage.xml
+            test-reports/htmlcov/
 
       - name: Run Python example
         run: |
