@@ -10,34 +10,56 @@ from typing import Union, Tuple, Optional
 logger = logging.getLogger(__name__)
 
 
-def load_return_code_messages(
-    config_path: str = 'error_codes.ini'
-) -> dict[int, str]:
-    """Load error code messages from an INI file or return defaults.
+def init_logging(debug: bool) -> None:
+    """Initialize logging once (idempotent) with sensible defaults.
 
-    Args:
-        config_path (str): Path to the INI file. Defaults to 'error_codes.ini'.
-
-    Returns:
-        dict[int, str]: Mapping of return codes to their messages.
-
-    Example INI format:
-        [codes]
-        0=Success
-        -1=Invalid buffer or buffer size is zero
+    If the root logger already has handlers (configured by host app), this
+    function does nothing except optionally raise the module logger level.
     """
+    root = logging.getLogger()
+    if not root.handlers:  # configure only if nothing configured yet
+        level = logging.DEBUG if debug else logging.INFO
+        logging.basicConfig(
+            level=level,
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+        )
+    if debug:
+        logger.setLevel(logging.DEBUG)
+
+
+def load_return_code_messages(config_path: str | None = None) -> dict[int, str]:
+    """Load error code messages from INI or return defaults.
+
+    Resolution order (first existing, readable file wins):
+      1. Explicit path passed in (as-is; relative resolved against CWD)
+      2. error_codes.ini located next to this script
+      3. error_codes.ini in the current working directory
+    """
+    candidates: list[Path] = []
+    if config_path:
+        p = Path(config_path)
+        candidates.append(p if p.is_absolute() else Path.cwd() / p)
+    script_dir_file = Path(__file__).with_name("error_codes.ini")
+    candidates.append(script_dir_file)
+    candidates.append(Path.cwd() / "error_codes.ini")
+
     config = configparser.ConfigParser()
-    if Path(config_path).exists():
-        config.read(config_path)
-        return {
-            int(k): v
-            for section in config.sections()
-            for k, v in config.items(section)
-        }
-    logger.warning(
-        f"Config file '{config_path}' not found. "
-        "Using default messages."
-    )
+    for c in candidates:
+        try:
+            if c.exists():
+                config.read(c)
+                if config.sections():
+                    logger.debug("Loaded error code messages from %s", c)
+                    return {
+                        int(k): v
+                        for section in config.sections()
+                        for k, v in config.items(section)
+                    }
+        except OSError:
+            continue
+
+    # Defaults
     return {
         0: "Success",
         -1: "Invalid buffer or buffer size is zero",
@@ -244,8 +266,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    init_logging(args.debug)
     if args.debug:
-        logger.setLevel(logging.DEBUG)
         logger.debug("Debug mode enabled")
 
     try:
