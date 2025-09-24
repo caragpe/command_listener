@@ -60,13 +60,13 @@ jobs:
             process-command:test \
             bash -lc "
               pip install --quiet gcovr &&
-              cmake -S /app -B /tmp/build-coverage \
+              cmake -S /app -B /build \
                 -DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_CXX_FLAGS='--coverage' \
                 -DCMAKE_EXE_LINKER_FLAGS='--coverage' &&
-              cmake --build /tmp/build-coverage &&
-              cd /tmp/build-coverage &&
-              ctest &&
+              cmake --build /build &&
+              cd /build &&
+              ctest -V &&
               gcovr -r /app --xml -o /coverage/coverage.xml &&
               gcovr -r /app --html --html-details -o /coverage/index.html
             "
