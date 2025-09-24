@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../include/process_command.h"
+#include "process_command.h"
 
 // Hardcoded literals matching implementation
 constexpr const char *kPrefix = "ACK: ";
