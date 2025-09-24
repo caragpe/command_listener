@@ -63,7 +63,7 @@ jobs:
           docker run --rm \
             -v $(pwd)/test-reports:/app/test-reports \
             process-command:test \`
-            python3 -m pytest python/tests -v --tb=short --junitxml=test-reports/test-results.xml
+            python3 -m pytest python/tests -v --tb=short --junitxml=/app/test-reports/test-results.xml
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
