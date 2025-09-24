@@ -56,20 +56,30 @@ jobs:
           docker run --rm process-command:test \
             bash -c "cd /app/build && ./test_process_command"
 
-      - name: Run tests and generate JUnit XML
+      - name: Set up Python test reports directory
         run: |
           mkdir -p test-reports
           sudo chown 1000:1000 test-reports
+      - name: Run Python tests
+        run: |
           docker run --rm \
             -v $(pwd)/test-reports:/app/test-reports \
             process-command:test \
             python3 -m pytest python/tests -v --tb=short --junitxml=/app/test-reports/test-results.xml
 
-      - name: Upload test results
+      - name: Python coverage
+        run: |
+          docker run --rm process-command:test \
+            bash -c "coverage run -m pytest python/tests && coverage xml"
+
+      - name: Upload Python test results
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: test-reports/test-results.xml
+          name: python-test-results
+          path: |
+            test-reports/test-results.xml
+            .coverage
+            coverage.xml
 
       - name: Run Python example
         run: |
