@@ -43,3 +43,7 @@ Testing/
 
 # debug information files
 *.dwo
+
+# Python files
+__pycache__/
+*.pyc

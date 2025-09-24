@@ -41,15 +41,35 @@ jobs:
             --output type=docker \
             .
 
-      - name: Check code formatting
+      - name: Run C++ code linting
         run: |
           docker run --rm process-command:test \
             bash -c "cd /app/build && cmake --build . --target check-format"
+
+      - name: Run Python code linting
+        run: |
+          docker run --rm process-command:test \
+            flake8 python/ --count --show-source --statistics
 
       - name: Run C++ tests
         run: |
           docker run --rm process-command:test \
             bash -c "cd /app/build && ./test_process_command"
+
+      - name: Run tests and generate JUnit XML
+        run: |
+          mkdir -p test-reports
+          sudo chown 1000:1000 test-reports
+          docker run --rm \
+            -v $(pwd)/test-reports:/app/test-reports \
+            process-command:test \
+            python3 -m pytest python/tests -v --tb=short --junitxml=/app/test-reports/test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-reports/test-results.xml
 
       - name: Run Python example
         run: |
