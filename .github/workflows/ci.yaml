@@ -59,9 +59,10 @@ jobs:
       - name: Run tests and generate JUnit XML
         run: |
           mkdir -p test-reports
+          sudo chown 1000:1000 test-reports
           docker run --rm \
             -v $(pwd)/test-reports:/app/test-reports \
-            process-command:test \
+            process-command:test \`
             python3 -m pytest python/tests -v --tb=short --junitxml=test-reports/test-results.xml
 
       - name: Upload test results
