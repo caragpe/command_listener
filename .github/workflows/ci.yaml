@@ -68,8 +68,7 @@ jobs:
             bash -c 'set -e; \
               python3 -m coverage run -m pytest python/tests --junitxml=/app/test-reports/test-results.xml; \
               python3 -m coverage xml -o /app/test-reports/coverage.xml; \
-              python3 -m coverage html -d /app/test-reports/htmlcov; \
-              ls -1 /app/test-reports'
+              python3 -m coverage html -d /app/test-reports/htmlcov;'
 
       - name: Upload Python test results
         uses: actions/upload-artifact@v4
