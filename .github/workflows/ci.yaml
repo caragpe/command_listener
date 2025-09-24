@@ -89,10 +89,10 @@ jobs:
 
       # ---------- C++ ----------
       - name: C++ tests & coverage
-        if: matrix.suite == 'cpp'
+        if: always() && matrix.suite == 'cpp'
         run: |
           mkdir -p coverage-cpp
-          chmod 777 coverage-cpp  # Ensure container user can write
+          chmod 777 coverage-cpp
 
           docker run --rm \
             -v "$PWD/coverage-cpp:/cov" \
@@ -101,14 +101,21 @@ jobs:
               set -e
               mkdir -p /tmp/test-build
               cd /tmp/test-build
-              cmake /app -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
+              cmake /app -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_CXX_OUTPUT_EXTENSION_REPLACE=ON
               cmake --build . -j$(nproc)
               ctest -V
-              gcovr -r /app --filter /app/src/ --xml -o /cov/coverage.xml --html-details -o /cov/index.html
+
+              # Optional: debug coverage data
+              # find . -name "*.gcda"
+
+              gcovr -r /app \
+                    --filter /app/src/ \
+                    --xml /cov/coverage.xml \
+                    --html-details /cov/index.html
             '
 
       - name: Upload C++ coverage → Codecov
-        if: matrix.suite == 'cpp'
+        if: always() && matrix.suite == 'cpp'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage-cpp/coverage.xml
@@ -116,7 +123,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload C++ coverage folder (artifact)
-        if: matrix.suite == 'cpp'
+        if: always() && matrix.suite == 'cpp'
         uses: actions/upload-artifact@v4
         with:
           name: cpp-coverage
@@ -124,24 +131,24 @@ jobs:
 
       # ---------- Python ----------
       - name: Python tests & coverage
-        if: matrix.suite == 'python'
+        if: always() && matrix.suite == 'python'
         run: |
           mkdir -p test-reports
           chmod 777 test-reports
 
           docker run --rm \
-            -v "$PWD/test-reports:/reports" \
+            -v "$PWD/test-reports:/app/python/reports" \
             ${{ secrets.DOCKERHUB_USERNAME }}/process-command:test \
             bash -c '
               set -e
-              cd /app/python
-              python3 -m coverage run -m pytest tests --junitxml=/reports/junit.xml
-              python3 -m coverage xml -o /reports/coverage.xml
-              python3 -m coverage html -d /reports/htmlcov
+              cd /app/python && mkdir reports
+              python3 -m coverage run -m pytest tests --junitxml=reports/junit.xml
+              python3 -m coverage xml -o reports/coverage.xml
+              python3 -m coverage html -d reports/htmlcov
             '
 
       - name: Upload Python coverage → Codecov
-        if: matrix.suite == 'python'
+        if: always() && matrix.suite == 'python'
         uses: codecov/codecov-action@v4
         with:
           file: ./test-reports/coverage.xml
@@ -149,7 +156,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload Python test-reports folder (artifact)
-        if: matrix.suite == 'python'
+        if: always() && matrix.suite == 'python'
         uses: actions/upload-artifact@v4
         with:
           name: python-test-results
