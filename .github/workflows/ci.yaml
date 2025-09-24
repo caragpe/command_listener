@@ -1,4 +1,4 @@
-name: CI
+name: Build-Lint-Test
 
 on:
   pull_request:
@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   build:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +50,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   lint:
+    name: Linting (C++ and Python)
     needs: build
     strategy:
       matrix:
@@ -76,6 +78,7 @@ jobs:
         run: docker run --rm ghcr.io/${{ github.repository }}/process-command:test flake8 python/ --count --show-source --statistics
 
   test:
+    name: Testing (C++ and Python)
     needs: build
     strategy:
       fail-fast: false
@@ -168,7 +171,8 @@ jobs:
           name: python-test-results
           path: test-reports
 
-  example:
+  run-example:
+    name: Run example (smoke test)
     needs: build
     runs-on: ubuntu-latest
     steps:
