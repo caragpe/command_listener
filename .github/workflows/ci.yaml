@@ -41,12 +41,12 @@ jobs:
             --output type=docker \
             .
 
-      - name: Check C++ code formatting
+      - name: Run C++ code linting
         run: |
           docker run --rm process-command:test \
             bash -c "cd /app/build && cmake --build . --target check-format"
 
-      - name: Run Python linting
+      - name: Run Python code linting
         run: |
           docker run --rm process-command:test \
             flake8 python/ --count --show-source --statistics

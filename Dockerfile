@@ -24,6 +24,9 @@ COPY tests/ ./tests/
 COPY python/ ./python/
 COPY CMakeLists.txt .
 COPY .clang-format .
+COPY pytest.ini .
+COPY pyproject.toml .
+COPY .flake8 .
 
 # Build C++ library
 RUN mkdir -p build \
