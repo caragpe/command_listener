@@ -68,8 +68,19 @@ jobs:
               -DCMAKE_EXE_LINKER_FLAGS='--coverage' &&
               make && 
               ctest -V &&
-              gcovr -r /app --xml -o /coverage/coverage.xml &&
-              gcovr -r /app --html --html-details -o /coverage/index.html
+              # Generate coverage excluding third-party and CMake artifacts
+              gcovr -r /app \
+                --filter '/app/src' \
+                --filter '/app/include' \
+                --exclude 'build/_deps' \
+                --exclude 'build/CMakeFiles' \
+                --xml -o /coverage/coverage.xml &&
+              gcovr -r /app \
+                --filter '/app/src' \
+                --filter '/app/include' \
+                --exclude 'build/_deps' \
+                --exclude 'build/CMakeFiles' \
+                --html --html-details -o /coverage/index.html
             "
 
       - name: Upload C++ coverage
