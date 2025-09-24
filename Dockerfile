@@ -1,5 +1,5 @@
 # Certified base image (Ubuntu 22.04 LTS)
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS build
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
@@ -37,6 +37,8 @@ RUN cd build \
 
 RUN mkdir -p ./python/build \
     && cp build/libprocess_command.so ./python/build/
+
+FROM build as test
 
 # After installing system Python
 RUN python3 -m venv /opt/venv
