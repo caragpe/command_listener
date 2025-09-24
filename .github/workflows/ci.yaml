@@ -59,17 +59,19 @@ jobs:
             -v $(pwd)/coverage-cpp:/coverage \
             process-command:test \
             bash -lc "
-              pip install --quiet gcovr &&
-              cmake -S /app -B /build \
-                -DCMAKE_BUILD_TYPE=Debug \
-                -DCMAKE_CXX_FLAGS='--coverage' \
-                -DCMAKE_EXE_LINKER_FLAGS='--coverage' &&
-              cmake --build /build &&
-              cd /build &&
+              cd /app
+              mkdir -p build &&             
+              cd build &&
+              cmake -S /app -B . \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DCMAKE_CXX_FLAGS='--coverage' \
+              -DCMAKE_EXE_LINKER_FLAGS='--coverage' &&
+              make && 
               ctest -V &&
               gcovr -r /app --xml -o /coverage/coverage.xml &&
               gcovr -r /app --html --html-details -o /coverage/index.html
             "
+
       - name: Upload C++ coverage
         uses: actions/upload-artifact@v4
         with:
