@@ -77,8 +77,8 @@ jobs:
           name: python-test-results
           path: |
             test-reports/test-results.xml
-            test-reports/.coverage
             test-reports/coverage.xml
+            test-reports/htmlcov/
 
       - name: Run Python example
         run: |
