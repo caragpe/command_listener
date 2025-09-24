@@ -66,11 +66,8 @@ jobs:
             -v $(pwd)/test-reports:/app/test-reports \
             process-command:test \
             python3 -m pytest python/tests -v --tb=short --junitxml=/app/test-reports/test-results.xml
-
-      - name: Python coverage
-        run: |
-          docker run --rm process-command:test \
-            bash -c "coverage run -m pytest python/tests && coverage xml"
+            coverage run -m pytest python/tests && coverage xml
+            mv .coverage coverage.xml /app/test-reports/
 
       - name: Upload Python test results
         uses: actions/upload-artifact@v4
@@ -78,8 +75,8 @@ jobs:
           name: python-test-results
           path: |
             test-reports/test-results.xml
-            .coverage
-            coverage.xml
+            test-reports/.coverage
+            test-reports/coverage.xml
 
       - name: Run Python example
         run: |
