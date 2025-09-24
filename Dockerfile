@@ -18,9 +18,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy source
-COPY include/ ./include/
 COPY src/ ./src/
-COPY tests/ ./tests/
 COPY python/ ./python/
 COPY CMakeLists.txt .
 COPY .clang-format .

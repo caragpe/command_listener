@@ -71,13 +71,11 @@ jobs:
               # Generate coverage excluding third-party and CMake artifacts
               gcovr -r /app \
                 --filter '/app/src' \
-                --filter '/app/include' \
                 --exclude 'build/_deps' \
                 --exclude 'build/CMakeFiles' \
                 --xml -o /coverage/coverage.xml &&
               gcovr -r /app \
                 --filter '/app/src' \
-                --filter '/app/include' \
                 --exclude 'build/_deps' \
                 --exclude 'build/CMakeFiles' \
                 --html --html-details -o /coverage/index.html

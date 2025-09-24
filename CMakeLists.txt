@@ -15,14 +15,14 @@ add_library(process_command SHARED src/process_command.cpp)
 
 # Mark header as public
 set_target_properties(process_command PROPERTIES
-    PUBLIC_HEADER include/process_command.h
+    PUBLIC_HEADER src/include/process_command.h
 )
 
 # Public include directory for consumers
 target_include_directories(process_command
     PUBLIC
         $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>
 )
 
 # Hide symbols by default (GCC/Clang)
@@ -45,7 +45,7 @@ install(TARGETS process_command
 
 # Header installed via PUBLIC_HEADER above
 
-install(FILES include/process_command.h
+install(FILES src/include/process_command.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
@@ -61,8 +61,8 @@ find_program(CLANG_FORMAT_EXE NAMES clang-format clang-format-14 clang-format-13
 if(CLANG_FORMAT_EXE)
     file(GLOB_RECURSE ALL_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/include/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp
     )
 
     # Check formatting (fails if not compliant)
@@ -98,7 +98,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 # Build test executable
-add_executable(test_process_command tests/test_process_command.cpp)
+add_executable(test_process_command src/tests/test_process_command.cpp)
 
 # Link against your library + Catch2
 target_link_libraries(test_process_command
