@@ -100,13 +100,25 @@ jobs:
         if: matrix.suite == 'cpp'
         run: |
           mkdir -p coverage-cpp
-          docker run --rm -v "$PWD/coverage-cpp:/cov" -u$(id -u):$(id -g) ghcr.io/${{ github.repository }}/process-command:test \
+          # Make sure the host directory is writable by appuser (UID 1000)
+          chmod 777 coverage-cpp  # or 755 if sufficient
+
+          docker run --rm \
+            -v "$PWD/coverage-cpp:/cov" \
+            ghcr.io/caragpe/command_listener/process-command:test \
             bash -c '
               set -e
-              cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
-              cmake --build build -j$(nproc)
-              ctest --test-dir build -V
-              gcovr -r . --filter src/ --xml -o /cov/coverage.xml --html-details -o /cov/index.html'
+              # Build in a fresh, user-owned directory
+              mkdir -p /tmp/test-build
+              cd /tmp/test-build
+
+              cmake /app -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
+              cmake --build . -j$(nproc)
+              ctest -V
+
+              # Generate coverage and output to /cov (mounted volume)
+              gcovr -r /app --filter /app/src/ --xml -o /cov/coverage.xml --html-details -o /cov/index.html
+            '
 
       - name: Upload C++ coverage → Codecov
         if: matrix.suite == 'cpp'
@@ -128,12 +140,17 @@ jobs:
         if: matrix.suite == 'python'
         run: |
           mkdir -p test-reports
-          docker run --rm -v "$PWD/test-reports:/reports" -u$(id -u):$(id -g) ghcr.io/${{ github.repository }}/process-command:test \
+          chmod 777 test-reports
+
+          docker run --rm \
+            -v "$PWD/test-reports:/reports" \
+            ghcr.io/caragpe/command_listener/process-command:test \
             bash -c '
               set -e
-              python3 -m coverage run -m pytest python/tests --junitxml=/reports/junit.xml
-              python3 -m coverage xml  -o /reports/coverage.xml
-              python3 -m coverage html -d /reports/htmlcov'
+              cd /app/python
+              python3 -m coverage run -m pytest tests --junitxml=/reports/junit.xml
+              python3 -m coverage xml -o /reports/coverage.xml
+              python3 -m coverage html -d /reports/htmlcov
 
       - name: Upload Python coverage → Codecov
         if: matrix.suite == 'python'
