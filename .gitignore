@@ -47,3 +47,5 @@ Testing/
 # Python files
 __pycache__/
 *.pyc
+
+test-reports/
