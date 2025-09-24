@@ -1,115 +1,117 @@
-name: Build_Format_and_Tests
+name: CI
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, reopened, synchronize]
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_BUILDKIT: 1
-
+    outputs:
+      tag: process-command:test
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v5
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          context: .
+          target: test
+          tags: process-command:test
+          outputs: type=docker
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Prepare local cache dir (if not restored)
-        run: mkdir -p /tmp/.buildx-cache
+  lint:
+    needs: build
+    strategy:
+      matrix: { tool: [cpp, python] }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker run --rm process-command:test make -C build check-format
+        if: matrix.tool == 'cpp'
+      - run: docker run --rm process-command:test flake8 python/ --count --show-source --statistics
+        if: matrix.tool == 'python'
 
-      - name: Build Docker image with Buildx
-        run: |
-          docker buildx build \
-            --tag process-command:test \
-            --file Dockerfile \
-            --cache-from=type=local,src=/tmp/.buildx-cache \
-            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
-            --output type=docker \
-            .
+  test:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix: { suite: [cpp, python] }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Run C++ code linting
-        run: |
-          docker run --rm process-command:test \
-            bash -c "cd /app/build && cmake --build . --target check-format"
-
-      - name: Run Python code linting
-        run: |
-          docker run --rm process-command:test \
-            flake8 python/ --count --show-source --statistics
-
-      - name: Generate C++ coverage
+      # ---------- C++ ----------
+      - name: C++ tests & coverage
+        if: matrix.suite == 'cpp'
         run: |
           mkdir -p coverage-cpp
-          sudo chown 1000:1000 coverage-cpp
-          docker run --rm \
-            -v $(pwd)/coverage-cpp:/coverage \
-            process-command:test \
-            bash -lc "
-              cd /app
-              mkdir -p build &&             
-              cd build &&
-              cmake -S /app -B . \
-              -DCMAKE_BUILD_TYPE=Debug \
-              -DCMAKE_CXX_FLAGS='--coverage' \
-              -DCMAKE_EXE_LINKER_FLAGS='--coverage' &&
-              make && 
-              ctest -V &&
-              # Generate coverage excluding third-party and CMake artifacts
-              gcovr -r /app \
-                --filter '/app/src' \
-                --exclude 'build/_deps' \
-                --exclude 'build/CMakeFiles' \
-                --xml -o /coverage/coverage.xml &&
-              gcovr -r /app \
-                --filter '/app/src' \
-                --exclude 'build/_deps' \
-                --exclude 'build/CMakeFiles' \
-                --html --html-details -o /coverage/index.html
-            "
+          docker run --rm -v "$PWD/coverage-cpp:/cov" -u$(id -u):$(id -g) process-command:test \
+            bash -c '
+              set -e
+              cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage"
+              cmake --build build -j$(nproc)
+              ctest --test-dir build -V
+              gcovr -r . --filter src/ --xml -o /cov/coverage.xml --html-details -o /cov/index.html'
 
-      - name: Upload C++ coverage
+      - name: Upload C++ coverage → Codecov
+        if: matrix.suite == 'cpp'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage-cpp/coverage.xml
+          flags: cpp
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload C++ coverage folder (artifact)
+        if: matrix.suite == 'cpp'
         uses: actions/upload-artifact@v4
         with:
           name: cpp-coverage
           path: coverage-cpp
 
-      - name: Set up Python test reports directory
+      # ---------- Python ----------
+      - name: Python tests & coverage
+        if: matrix.suite == 'python'
         run: |
           mkdir -p test-reports
-          sudo chown 1000:1000 test-reports
-      - name: Run Python tests
-        run: |
-          docker run --rm \
-            -v "$(pwd)/test-reports:/app/test-reports" \
-            process-command:test \
-            bash -c 'set -e; \
-              python3 -m coverage run -m pytest python/tests --junitxml=/app/test-reports/test-results.xml; \
-              python3 -m coverage xml -o /app/test-reports/coverage.xml; \
-              python3 -m coverage html -d /app/test-reports/htmlcov;'
+          docker run --rm -v "$PWD/test-reports:/reports" -u$(id -u):$(id -g) process-command:test \
+            bash -c '
+              set -e
+              python3 -m coverage run -m pytest python/tests --junitxml=/reports/junit.xml
+              python3 -m coverage xml  -o /reports/coverage.xml
+              python3 -m coverage html -d /reports/htmlcov'
 
-      - name: Upload Python test results
+      - name: Upload Python coverage → Codecov
+        if: matrix.suite == 'python'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./test-reports/coverage.xml
+          flags: python
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload Python test-reports folder (artifact)
+        if: matrix.suite == 'python'
         uses: actions/upload-artifact@v4
         with:
           name: python-test-results
-          path: |
-            test-reports/test-results.xml
-            test-reports/coverage.xml
-            test-reports/htmlcov/
+          path: test-reports
 
-      - name: Run Python example
-        run: |
-          docker run --rm process-command:test
+  example:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker run --rm process-command:test
