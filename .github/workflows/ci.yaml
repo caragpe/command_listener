@@ -41,10 +41,15 @@ jobs:
             --output type=docker \
             .
 
-      - name: Check code formatting
+      - name: Check C++ code formatting
         run: |
           docker run --rm process-command:test \
             bash -c "cd /app/build && cmake --build . --target check-format"
+
+      - name: Run Python linting
+        run: |
+          docker run --rm process-command:test \
+            flake8 python/ --count --show-source --statistics
 
       - name: Run C++ tests
         run: |
@@ -60,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: python/tests/test-results.xml
+          path: app/python/tests/test-results.xml
 
       - name: Run Python example
         run: |
