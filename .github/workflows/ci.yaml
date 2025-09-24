@@ -65,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: app/python/tests/test-results.xml
+          path: python/tests/test-results.xml
 
       - name: Run Python example
         run: |
