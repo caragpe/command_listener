@@ -13,7 +13,7 @@ constexpr const char *kPrefix = "ACK: ";
 constexpr const char *kNackPrefix = "NACK: ";
 constexpr const char *kErrorMsg = "(null or empty command)";
 constexpr const char *kInvalidCmdMsg = "Invalid command";
-constexpr std::array<const char *, 3> kValidCommands = {"COMMAND_1", "COMMAND_2", "COMMAND_3"};
+constexpr std::array<const char *, 3> kValidCommands = {"PING", "STATUS", "AUTH"};
 
 namespace {
 /*  return codes that match the implementation  */
@@ -90,10 +90,10 @@ TEST_CASE("process_command", "[process_command]") {
     }
 
     SECTION("Leading/trailing space") {
-        test_command_with_guards(" COMMAND_1", 1024, std::string(kNackPrefix) + kInvalidCmdMsg,
-                                 kNackOk, "leading space");
-        test_command_with_guards("COMMAND_1 ", 1024, std::string(kNackPrefix) + kInvalidCmdMsg,
-                                 kNackOk, "trailing space");
+        test_command_with_guards(" PING", 1024, std::string(kNackPrefix) + kInvalidCmdMsg, kNackOk,
+                                 "leading space");
+        test_command_with_guards("PING ", 1024, std::string(kNackPrefix) + kInvalidCmdMsg, kNackOk,
+                                 "trailing space");
     }
 
     SECTION("Very long invalid command") {
@@ -103,7 +103,7 @@ TEST_CASE("process_command", "[process_command]") {
     }
 
     SECTION("Very long valid command – should still be rejected quickly") {
-        std::string big = "COMMAND_1" + std::string(10'000, 'Y');
+        std::string big = "PING" + std::string(10'000, 'Y');
         test_command_with_guards(big.c_str(), 1024, std::string(kNackPrefix) + kInvalidCmdMsg,
                                  kNackOk, "long valid prefix");
     }
@@ -114,7 +114,7 @@ TEST_CASE("process_command", "[process_command]") {
     }
 
     SECTION("Exact buffer fit – ACK") {
-        const char *cmd = "COMMAND_1";
+        const char *cmd = "PING";
         size_t need = std::strlen(kPrefix) + std::strlen(cmd) + 1;
         std::string exp = std::string(kPrefix) + cmd;
         test_command_with_guards(cmd, need, exp, kSuccess, "exact ack");
@@ -128,7 +128,7 @@ TEST_CASE("process_command", "[process_command]") {
     }
 
     SECTION("Buffer too small by one byte – ACK") {
-        const char *cmd = "COMMAND_1";
+        const char *cmd = "PING";
         size_t small = std::strlen(kPrefix) + std::strlen(cmd);  // no NUL
         test_command_with_guards(cmd, small, "", kAckOverflow, "ack-1");
     }
@@ -144,7 +144,7 @@ TEST_CASE("process_command", "[process_command]") {
     }
 
     SECTION("Buffer size 1 – valid command") {
-        test_command_with_guards("COMMAND_1", 1, "", kAckOverflow, "size1-valid");
+        test_command_with_guards("PING", 1, "", kAckOverflow, "size1-valid");
     }
 
     SECTION("Buffer size 1 – null command") {
@@ -153,13 +153,13 @@ TEST_CASE("process_command", "[process_command]") {
 
     SECTION("Zero-size buffer") {
         char dummy = static_cast<char>(0xFF);
-        int rc = process_command("COMMAND_1", &dummy, 0);
+        int rc = process_command("PING", &dummy, 0);
         REQUIRE(static_cast<unsigned char>(dummy) == 0xFF);
         REQUIRE(rc == kInvalidBuffer);
     }
 
     SECTION("nullptr buffer") {
-        int rc = process_command("COMMAND_1", nullptr, 0);
+        int rc = process_command("PING", nullptr, 0);
         REQUIRE(rc == kInvalidBuffer);
     }
 

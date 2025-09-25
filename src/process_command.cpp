@@ -10,7 +10,7 @@ const char kPrefix[] = "ACK: ";
 const char kNackPrefix[] = "NACK: ";
 const char kErrorMsg[] = "(null or empty command)";
 const char kInvalidCmdMsg[] = "Invalid command";
-const std::array<const char *, 3> kValidCommands = {"COMMAND_1", "COMMAND_2", "COMMAND_3"};
+const std::array<const char *, 3> kValidCommands = {"PING", "STATUS", "AUTH"};
 }  // namespace detail
 
 namespace {
