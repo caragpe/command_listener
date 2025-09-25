@@ -53,4 +53,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Set default command — you can override at runtime
-CMD ["python3", "python/examples/example.py", "COMMAND_1"]
+CMD ["python3", "python/examples/example.py", "PING"]

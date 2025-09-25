@@ -252,7 +252,7 @@ def format_output(code: int,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Call C++ process_command library.")
-    parser.add_argument("command", help="Command to send (e.g., COMMAND_1)")
+    parser.add_argument("command", help="Command to send (e.g., PING)")
     parser.add_argument(
         "--lib-path", help="Path to the shared library (overrides env var)")
     parser.add_argument("--bufsize", type=int, default=4096,
