@@ -95,7 +95,7 @@ jobs:
           chmod 777 coverage-cpp
 
           docker run --rm \
-            -v "$PWD/coverage-cpp:/cov" \
+            -v "$PWD/coverage-cpp:/tmp/test-build/cov" \
             ${{ secrets.DOCKERHUB_USERNAME }}/process-command:test \
             bash -c '
               set -e
@@ -110,8 +110,8 @@ jobs:
 
               gcovr -r /app \
                     --filter /app/src/ \
-                    --xml /cov/coverage.xml \
-                    --html-details /cov/index.html
+                    --xml cov/coverage.xml \
+                    --html-details cov/index.html
             '
 
       - name: Upload C++ coverage → Codecov
