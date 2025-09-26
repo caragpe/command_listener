@@ -95,23 +95,20 @@ jobs:
           chmod 777 coverage-cpp
 
           docker run --rm \
-            -v "$PWD/coverage-cpp:/tmp/test-build/cov" \
+            -v "$PWD/coverage-cpp:/app/coverage-cpp" \
             ${{ secrets.DOCKERHUB_USERNAME }}/process-command:test \
             bash -c '
               set -e
-              mkdir -p /tmp/test-build
-              cd /tmp/test-build
+              cd /app
+              mkdir -p build
+              cd build
               cmake /app -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_CXX_OUTPUT_EXTENSION_REPLACE=ON
               cmake --build . -j$(nproc)
               ctest -V
-
-              # Optional: debug coverage data
-              # find . -name "*.gcda"
-
               gcovr -r /app \
                     --filter /app/src/ \
-                    --xml cov/coverage.xml \
-                    --html-details cov/index.html
+                    --xml coverage-cpp/coverage.xml \
+                    --html-details coverage-cpp/index.html
             '
 
       - name: Upload C++ coverage → Codecov
