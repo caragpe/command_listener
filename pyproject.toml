@@ -13,10 +13,10 @@ testpaths = ["python/tests"]
 addopts = "-v --tb=short --strict-markers"
 markers = [
     "slow: marks tests as slow",
-    "integration: integration tests"
+    "unit: unit tests (default, mock c++ library)",
+    "integration: integration tests (require real c++ library)",
 ]
 
-# Coverage.py configuration
 [tool.coverage.run]
 source = ["python"]
 omit = [

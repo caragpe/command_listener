@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     git \
     clang-format \
     build-essential \
+    vim \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up working directory
@@ -22,7 +23,6 @@ COPY src/ ./src/
 COPY python/ ./python/
 COPY CMakeLists.txt .
 COPY .clang-format .
-COPY pytest.ini .
 COPY pyproject.toml .
 COPY .flake8 .
 
