@@ -63,7 +63,7 @@ def test_invalid_command_returns_error_code():
 @pytest.mark.integration
 def test_buffer_too_small_reports_overflow():
     # Use a buffer smaller than the expected ACK response for COMMAND_2
-    code, response = call_process_command("PINGI", bufsize=7)
+    code, response = call_process_command("PING", bufsize=7)
     assert code == -3
     assert response is None
 
