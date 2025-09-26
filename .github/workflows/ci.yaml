@@ -107,8 +107,8 @@ jobs:
               ctest -V
               gcovr -r /app \
                     --filter /app/src/ \
-                    --xml coverage-cpp/coverage.xml \
-                    --html-details coverage-cpp/index.html
+                    --xml /app/coverage-cpp/coverage.xml \
+                    --html-details /app/coverage-cpp/index.html
             '
 
       - name: Upload C++ coverage → Codecov
