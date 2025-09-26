@@ -135,10 +135,11 @@ jobs:
         run: |
           mkdir -p test-reports
           chmod 777 test-reports
+
           docker run --rm \
             -v "$PWD/test-reports:/app/python/reports" \
-            process-command:1.0.0 \
-            bash -c '
+            ${{ secrets.DOCKERHUB_USERNAME }}/process-command:test \
+              bash -c '
               cd /app/python
               python3 -m coverage run -m pytest tests --junitxml=reports/junit.xml
               TEST_EXIT_CODE=$?
@@ -148,7 +149,6 @@ jobs:
               # Exit with original test result
               exit $TEST_EXIT_CODE
             '
-
       - name: Upload Python coverage → Codecov
         if: always() && matrix.suite == 'python'
         uses: codecov/codecov-action@v4
