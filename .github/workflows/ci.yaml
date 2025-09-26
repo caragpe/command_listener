@@ -141,7 +141,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/process-command:test \
             bash -c '
               set -e
-              cd /app/python && mkdir reports
+              cd /app/python
               python3 -m coverage run -m pytest tests --junitxml=reports/junit.xml
               python3 -m coverage xml -o reports/coverage.xml
               python3 -m coverage html -d reports/htmlcov
