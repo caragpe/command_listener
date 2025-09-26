@@ -139,13 +139,19 @@ jobs:
           docker run --rm \
             -v "$PWD/test-reports:/app/python/reports" \
             ${{ secrets.DOCKERHUB_USERNAME }}/process-command:test \
-            bash -c '
-              set -e
-              cd /app/python
-              python3 -m coverage run -m pytest tests --junitxml=reports/junit.xml
-              python3 -m coverage xml -o reports/coverage.xml
-              python3 -m coverage html -d reports/htmlcov
-            '
+              bash -c '
+                set -e
+                cd /app/python
+                echo "Running tests..."
+                python3 -m coverage run -m pytest tests --junitxml=reports/junit.xml
+                echo "Pytest exit code: $?"
+                echo "Coverage data file:"
+                ls -la .coverage
+                python3 -m coverage xml -o reports/coverage.xml   
+                python3 -m coverage html -d reports/htmlcov
+                echo "Final reports:"
+                ls -la reports/
+              '
 
       - name: Upload Python coverage → Codecov
         if: always() && matrix.suite == 'python'
